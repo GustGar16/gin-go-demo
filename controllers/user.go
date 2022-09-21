@@ -79,7 +79,16 @@ func CreateUser() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusCreated, responses.GeneralResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": result}})
+		newUserCond := bson.M{
+			"_id": result.InsertedID,
+		}
+		err = userCollection.FindOne(ctx, newUserCond).Decode(&user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, responses.GeneralResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": "Error to save data"}})
+			return
+		}
+
+		c.JSON(http.StatusCreated, responses.GeneralResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": user}})
 
 	}
 }
@@ -94,7 +103,7 @@ func GetUser() gin.HandlerFunc {
 
 		objId, _ := primitive.ObjectIDFromHex(userId)
 		cond := bson.M{
-			"_id": objId,
+			"id": objId,
 		}
 		err := userCollection.FindOne(ctx, cond).Decode(&user)
 		if err != nil {
@@ -127,14 +136,14 @@ func EditUser() gin.HandlerFunc {
 			"location": user.Location,
 			"title":    user.Title,
 		}
-		result, err := userCollection.UpdateOne(ctx, bson.M{"_id": objId}, bson.M{"$set": update})
+		result, err := userCollection.UpdateOne(ctx, bson.M{"id": objId}, bson.M{"$set": update})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.GeneralResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
 		}
 		var updatedUser models.User
 		if result.MatchedCount == 1 {
-			err := userCollection.FindOne(ctx, bson.M{"_id": objId}).Decode(&updatedUser)
+			err := userCollection.FindOne(ctx, bson.M{"id": objId}).Decode(&updatedUser)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, responses.GeneralResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 				return
@@ -152,7 +161,7 @@ func DeleteUser() gin.HandlerFunc {
 		defer cancel()
 
 		objId, _ := primitive.ObjectIDFromHex(userId)
-		result, err := userCollection.DeleteOne(ctx, bson.M{"_id": objId})
+		result, err := userCollection.DeleteOne(ctx, bson.M{"id": objId})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, responses.GeneralResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
 			return
