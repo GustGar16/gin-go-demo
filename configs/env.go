@@ -6,23 +6,20 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var myEnv map[string]string
+var myEnv map[string]string = readEnv()
 
-func readEnv() {
+func readEnv() map[string]string {
 	read, err := godotenv.Read()
-	myEnv = read
 	if err != nil {
 		log.Fatal("Error loading .env file")
-		return
 	}
+	return read
 }
 
 func EnvMongoURI() string {
-	readEnv()
 	return myEnv["MONGOURI"]
 }
 
 func CurrentDatabase() string {
-	readEnv()
 	return myEnv["MONGODB"]
 }
